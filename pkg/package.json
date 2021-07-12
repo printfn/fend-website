@@ -1,0 +1,21 @@
+{
+  "name": "fend-wasm",
+  "collaborators": [
+    "printfn <printfn@users.noreply.github.com>"
+  ],
+  "description": "Arbitrary-precision unit-aware calculator",
+  "version": "0.1.21",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/printfn/fend"
+  },
+  "files": [
+    "fend_wasm_bg.wasm",
+    "fend_wasm.js",
+    "fend_wasm.d.ts",
+    "LICENSE.md"
+  ],
+  "browser": "fend_wasm.js",
+  "types": "fend_wasm.d.ts"
+}

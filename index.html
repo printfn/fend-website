@@ -1,0 +1,125 @@
+<html>
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1">
+<title>fend</title>
+<script
+  src="https://browser.sentry-cdn.com/6.2.0/bundle.tracing.min.js"
+  integrity="sha384-Z4qhO5iPVi3IJ9//F7/h6V6HxmpfDYFY2y7N6cYuCU4QUVfo5CcTB4hM+eNq0sQl"
+  crossorigin="anonymous"
+></script>
+<script src="pkg/fend_wasm.js"></script>
+<style>
+body {
+    font: 1em/150% -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Helvetica, Arial, sans-serif,
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    background: rgb(241 241 241);
+    margin-top: 5ch;
+}
+#wrap {
+    max-width: 60ch;
+    margin: auto;
+}
+#input {
+    width: 100%;
+    font-size: larger;
+}
+#output {
+    font-size: large;
+    margin: 2ch 0;
+    overflow-wrap: break-word;
+}
+.error {
+    color: red;
+}
+#examples-title {
+    margin-bottom: -0.5em;
+}
+#examples {
+    white-space: pre;
+}
+</style>
+
+</head>
+<body>
+
+<div id="wrap">
+    <h1>fend</h1>
+    <input autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" placeholder="enter a query..." type="text" id="input" oninput="update()" autofocus>
+    <div id="output"><span id="output-text"></span></div>
+    <p><a target="_blank" rel="noreferrer noopener" href="https://github.com/printfn/fend">fend</a> is an arbitrary-precision unit-aware calculator.</p>
+    <p><a target="_blank" rel="noreferrer noopener" href="https://github.com/printfn/fend/wiki">fend manual</a></p>
+    <h3 id="examples-title">examples:</h3>
+<p id="examples">5'10" to cm
+→ 177.8 cm
+cos (pi/4) + i * (sin (pi/4))
+→ approx. 0.7071067811 + 0.7071067811i
+0b1001 + 3
+→ 0b1100
+0xffff to decimal
+→ 65535
+100 °C to °F
+→ 212 °F
+1 lightyear to parsecs
+→ approx. 0.3066013937 parsecs</p>
+</div>
+
+<script>
+
+let wasmInitialised = false;
+async function evaluateFend(input) {
+    const { initialise, evaluateFendWithTimeout } = wasm_bindgen;
+    if (!wasmInitialised) {
+        await wasm_bindgen('./pkg/fend_wasm_bg.wasm');
+        initialise();
+        const result = evaluateFendWithTimeout("1 + 2", 500);
+        console.log(`1 + 2 = ${result}`);
+        wasmInitialised = true;
+    }
+    return evaluateFendWithTimeout(input, 500);
+}
+
+async function update() {
+    let input = document.getElementById("input").value;
+    history.replaceState(undefined, undefined, `#${encodeURIComponent(input)}`)
+    let result = await evaluateFend(input);
+    result = result.replaceAll('&', '&amp;');
+    result = result.replaceAll('<', '&lt;');
+    result = result.replaceAll('>', '&gt;');
+    let output = '';
+    if (result == 'Error: Interrupted') {
+        output = '<i class="error">Calculation timed out</i>';
+    } else if (result.startsWith('Error: ')) {
+        output = `<i class="error">${result}</i>`;
+    } else if (result != '' && result.trim() != input.trim()) {
+        output = `→&nbsp;${result}`;
+    }
+    document.getElementById("output-text").innerHTML = output;
+}
+
+async function load() {
+    let hash = document.location.hash.substring(1);
+    let input = decodeURIComponent(hash);
+    document.getElementById("input").value = input;
+    update();
+};
+
+window.onload = load;
+window.onhashchange = load;
+
+Sentry.init({
+    dsn: "https://5b6e3d3bd2f842789a3d77ed4beeda7d@o491618.ingest.sentry.io/5643953",
+    release: "fend@0.1.21",
+    integrations: [new Sentry.Integrations.BrowserTracing()],
+
+    // We recommend adjusting this value in production, or using tracesSampler
+    // for finer control
+    tracesSampleRate: 1.0,
+});
+
+</script>
+
+</body>
+</html>
